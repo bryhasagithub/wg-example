@@ -3,7 +3,7 @@ from flask import Flask, request, redirect, url_for, send_from_directory, jsonif
 from werkzeug.utils import secure_filename
 
 #UPLOAD_FOLDER = '/Users/bry/wg-example/uploads'
-UPLOAD_FOLDER = '/Users/brian/wg-example/uploads'
+UPLOAD_FOLDER = 'app/uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'json'}
 
 app = Flask(__name__)
@@ -42,16 +42,17 @@ def handle_request():
 
     if request.method == 'GET':
         # return list of content inside UPLOAD_FOLDER at root upload level
-        content_list = []
+        files = []
+        directories = []
         for item in os.listdir(UPLOAD_FOLDER):
-
+            # handle if file type
             if os.path.isfile(os.path.join(UPLOAD_FOLDER, item)):
-                content_list.append(get_file_attrs(os.path.join(UPLOAD_FOLDER, item)))
-
+                files.append(get_file_attrs(os.path.join(UPLOAD_FOLDER, item)))
+            # handle if dir type
             elif os.path.isdir(os.path.join(UPLOAD_FOLDER, item)):
-                content_list.append(item)
+                directories.append(item)
 
-        resp = jsonify({'data' : content_list})
+        resp = jsonify({'data' : {"files": files,"directories":directories}})
         resp.status_code = 200
         return resp
 
@@ -64,21 +65,25 @@ def handle_request():
 def get_content(path):
     # return content or list of contents within the requested path.
     if os.path.isfile(os.path.join(UPLOAD_FOLDER, path)):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], path)
+        resp = send_from_directory(app.config['UPLOAD_FOLDER'], path)
+        resp.status_code = 200
+        print (get_file_attrs(os.path.join(UPLOAD_FOLDER, path)))
+        return resp
 
     elif os.path.isdir(os.path.join(UPLOAD_FOLDER, path)):
-        content_list = []
+        files = []
+        directories = []
         for item in os.listdir(os.path.join(UPLOAD_FOLDER, path)):
             # handle if file type
             if os.path.isfile(os.path.join(UPLOAD_FOLDER, path, item)):
                 file_verbose = get_file_attrs(os.path.join(UPLOAD_FOLDER, path, item))
-                content_list.append(file_verbose)
+                files.append(file_verbose)
 
             # handle if dir type
             elif os.path.isdir(os.path.join(UPLOAD_FOLDER, item)):
-                content_list.append(item)
+                directories.append(item)
 
-        resp = jsonify({'data' : content_list})
+        resp = jsonify({'data' : {"files": files,"directories":directories}})
         resp.status_code = 200
         return resp
 
@@ -88,5 +93,5 @@ def get_content(path):
         return resp
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8000)
+    app.run(debug=True, host='127.0.0.1')
 

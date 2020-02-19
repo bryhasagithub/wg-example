@@ -17,14 +17,15 @@ GET /bar/bar1 -> contents of file foo/bar
   - Application is Dockerized.
   - Provide a shell script to actually run the app from the command line.
   - Has multiple unit tests that presents themselves as examples of testing strategy.
- 
-#### TODO if phase 1 is complete.
+
+#### TODO if phase 1 is complete
   - Create POST, PUT, and DELETE endpoints to add, replace, and delete directories and files as appropriate. Any request bodies should be JSON.
   - Document your API using Swagger.
   - Create a Helm chart.
 
-### Installation
+### Running Locally  
 ```sh
 $ git clone https://github.com/bryhasagithub/wg-example
-$ //TODO
+$ pip install Flask
+$ python main
 ```
