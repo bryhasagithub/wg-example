@@ -2,12 +2,13 @@ import os
 from flask import Flask, request, redirect, url_for, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 
-#UPLOAD_FOLDER = '/Users/bry/wg-example/uploads'
 UPLOAD_FOLDER = 'app/uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'json'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -18,10 +19,31 @@ def get_file_attrs(filename):
         "path": str(head),
         "owner": os.stat(filename).st_uid,
         "size": os.stat(filename).st_size,
-        "permissions": os.stat(filename).st_mode
+        "permission": os.stat(filename).st_mode
     }
 
     return file_obj
+
+def find_content(filename):
+    for root, dirs, files in os.walk(UPLOAD_FOLDER):
+        if filename in files:
+            print (get_file_attrs(os.path.join(root, filename)))
+            resp = send_from_directory(root, filename)
+            resp.status_code = 200
+            return resp
+        elif filename in dirs:
+            files_verbose = []
+            for file in files:
+                files_verbose.append(get_file_attrs(os.path.join(root, file)))
+            # handle if dir type
+            resp = jsonify({'data' : {"files": files_verbose,"directories":dirs}})
+            resp.status_code = 200
+            return resp
+
+    resp = jsonify({'data' : 'No file(s) or directory(s) found for ' + filename})
+    resp.status_code = 404
+    return resp
+
 
 @app.route('/', methods=['GET', 'POST'])
 def handle_request():
@@ -69,7 +91,7 @@ def get_content(path):
         resp.status_code = 200
         print (get_file_attrs(os.path.join(UPLOAD_FOLDER, path)))
         return resp
-
+    # returns the directory within that directory
     elif os.path.isdir(os.path.join(UPLOAD_FOLDER, path)):
         files = []
         directories = []
@@ -86,11 +108,8 @@ def get_content(path):
         resp = jsonify({'data' : {"files": files,"directories":directories}})
         resp.status_code = 200
         return resp
-
     else:
-        resp = jsonify({'data' : 'No file(s) or directory(s) found for ' + path})
-        resp.status_code = 404
-        return resp
+        return find_content(path)
 
 if __name__ == "__main__":
     app.run(debug=True, host='127.0.0.1')
